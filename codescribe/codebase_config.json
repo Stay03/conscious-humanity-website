@@ -1,0 +1,21 @@
+{
+    "ignore_patterns": ["package-lock.json","README.md", ".vscode", "codescribe", "env", "venv", ".git", "codebase_snapshot.md", "node_modules", "public"],
+    "ignore_extensions": [".log", ".tmp", ".gitignore"],
+    "list_only_extensions": [".png",".jpg",".jpeg",".gif",".ico",".svg",".db",".sqlite",".pdf",".zip"],
+    "max_file_size_mb": 5,
+    "include_paths": [
+        "src/components/layout/Header/components/DesktopMenu.jsx",
+        "src/components/layout/Header/components/MobileMenu.jsx",
+        "src/components/layout/Header/data/menuData.js",
+        "src/services/api/client.js",
+        "src/services/api/endpoints.js",
+        "src/services/api/courseService.js",
+        "src/services/api/productService.js",
+        "src/hooks/useCourses.js",
+        "src/hooks/useProducts.js",
+        "src/hooks/useEvents.js",
+        "src/components/layout/Header/index.jsx"
+
+
+]
+}
