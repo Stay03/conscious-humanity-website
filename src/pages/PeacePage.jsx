@@ -3,6 +3,7 @@ import { ArrowRight, BookOpen, Download, ExternalLink } from 'lucide-react'; // 
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/auth/AuthModal';
+import MailingListModal from '../components/common/MailingListModal';
 
 // Assuming images are correctly imported
 import PeaceImage from '../assets/Peace.jpg';
@@ -20,6 +21,7 @@ const PeacePage = () => {
   const [isVisible, setIsVisible] = useState({});
   const [parallaxOffset, setParallaxOffset] = useState(0);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isMailingListModalOpen, setIsMailingListModalOpen] = useState(false);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
@@ -88,6 +90,10 @@ const PeacePage = () => {
     navigate('/donate');
   };
 
+  const handleJoinMailingListClick = () => {
+    setIsMailingListModalOpen(true);
+  };
+
   const handleCloseAuthModal = () => {
     setIsAuthModalOpen(false);
   };
@@ -95,6 +101,10 @@ const PeacePage = () => {
   const handleAuthSuccess = () => {
     setIsAuthModalOpen(false);
     // navigate('/welcome'); 
+  };
+
+  const handleCloseMailingListModal = () => {
+    setIsMailingListModalOpen(false);
   };
 
   // Reusable animation classes
@@ -547,6 +557,12 @@ Based on 45 years of research into understanding the human condition, Brother Is
               >
                 Make a Donation
               </button>
+              <button  
+                onClick={handleJoinMailingListClick}
+                className="px-8 py-3 bg-emerald-600 text-white font-medium rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+              >
+                Join Our Mailing List
+              </button>
             </div>
           </div>
         </div>
@@ -558,6 +574,12 @@ Based on 45 years of research into understanding the human condition, Brother Is
         onClose={handleCloseAuthModal}
         onAuthSuccess={handleAuthSuccess}
         initialTab="register"
+      />
+
+      {/* Render MailingListModal */}
+      <MailingListModal 
+        isOpen={isMailingListModalOpen}
+        onClose={handleCloseMailingListModal}
       />
 
        {/* Optional Footer Section (Placeholder) */}

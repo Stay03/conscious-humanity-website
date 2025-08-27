@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import LessonCard from './LessonCard';
+import QuizCard from './QuizCard';
 
 /**
  * LessonGrid Component
@@ -8,15 +9,16 @@ import LessonCard from './LessonCard';
  */
 const LessonGrid = ({ 
   sections, 
-  onLessonSelect, 
+  onLessonSelect,
+  onQuizSelect,
   availableLessons = [],
   progressionEnabled = false 
 }) => {
   const [filterSection, setFilterSection] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Get filtered and searched lessons
-  const getFilteredLessons = () => {
+  // Get filtered and searched lessons and quizzes
+  const getFilteredContent = () => {
     // Start with all sections
     let filteredSections = sections;
     
@@ -25,10 +27,11 @@ const LessonGrid = ({
       filteredSections = sections.filter(section => section.id.toString() === filterSection);
     }
     
-    // Then build lessons with section info and availability status
+    // Build lessons with section info and availability status
     const lessonsWithSections = filteredSections.flatMap(section => 
       (section.lessons || []).map(lesson => ({
         ...lesson,
+        type: 'lesson',
         sectionTitle: section.title,
         sectionId: section.id,
         section: section,
@@ -36,23 +39,39 @@ const LessonGrid = ({
         isAvailable: !progressionEnabled || availableLessons.some(l => l.id === lesson.id)
       }))
     );
+
+    // Build quizzes with section info
+    const quizzesWithSections = filteredSections.flatMap(section => 
+      (section.quizzes || []).map(quiz => ({
+        ...quiz,
+        type: 'quiz',
+        sectionTitle: section.title,
+        sectionId: section.id,
+        section: section,
+        // For now, all quizzes are available (can add progression logic later)
+        isAvailable: true
+      }))
+    );
+
+    // Combine lessons and quizzes
+    const allContent = [...lessonsWithSections, ...quizzesWithSections];
     
     // Apply search term filter if provided
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
-      return lessonsWithSections.filter(lesson => 
-        lesson.title.toLowerCase().includes(term) || 
-        lesson.description?.toLowerCase().includes(term)
+      return allContent.filter(item => 
+        item.title.toLowerCase().includes(term) || 
+        item.description?.toLowerCase().includes(term)
       );
     }
     
-    return lessonsWithSections;
+    return allContent;
   };
   
-  const filteredLessons = getFilteredLessons();
+  const filteredContent = getFilteredContent();
   
-  // Show all lessons, including locked ones, in the grid view
-  const visibleLessons = filteredLessons;
+  // Show all content (lessons and quizzes), including locked ones, in the grid view
+  const visibleContent = filteredContent;
   
   return (
     <div>
@@ -103,24 +122,35 @@ const LessonGrid = ({
       
       {/* Results summary */}
       <div className="mb-4 text-sm text-gray-600">
-        Showing {visibleLessons.length} lessons
+        Showing {visibleContent.length} items
         {filterSection !== 'all' && ' in this section'}
         {searchTerm && ` matching "${searchTerm}"`}
-        {progressionEnabled && ` (${visibleLessons.filter(lesson => lesson.isAvailable).length} available, ${visibleLessons.filter(lesson => !lesson.isAvailable).length} locked)`}
+        {progressionEnabled && ` (${visibleContent.filter(item => item.isAvailable).length} available, ${visibleContent.filter(item => !item.isAvailable).length} locked)`}
       </div>
       
       {/* Grid layout */}
-      {visibleLessons.length > 0 ? (
+      {visibleContent.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {visibleLessons.map(lesson => (
-            <LessonCard
-              key={lesson.id}
-              lesson={lesson}
-              sectionTitle={lesson.sectionTitle}
-              onClick={() => onLessonSelect(lesson, lesson.section)}
-              isComplete={lesson.complete}
-              isAvailable={lesson.isAvailable}
-            />
+          {visibleContent.map(item => (
+            item.type === 'lesson' ? (
+              <LessonCard
+                key={`lesson-${item.id}`}
+                lesson={item}
+                sectionTitle={item.sectionTitle}
+                onClick={() => onLessonSelect(item, item.section)}
+                isComplete={item.complete}
+                isAvailable={item.isAvailable}
+              />
+            ) : (
+              <QuizCard
+                key={`quiz-${item.id}`}
+                quiz={item}
+                sectionTitle={item.sectionTitle}
+                onClick={() => onQuizSelect && onQuizSelect(item, item.section)}
+                isComplete={item.complete}
+                isAvailable={item.isAvailable}
+              />
+            )
           ))}
         </div>
       ) : (
@@ -128,9 +158,9 @@ const LessonGrid = ({
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No lessons found</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No content found</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Try changing your search or filter to find what you're looking for.
+            Try changing your search or filter to find lessons or quizzes.
           </p>
           {(filterSection !== 'all' || searchTerm) && (
             <div className="mt-4">

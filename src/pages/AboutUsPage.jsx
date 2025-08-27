@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/auth/AuthModal';
+import MailingListModal from '../components/common/MailingListModal';
 import RetreatImage from '../assets/retreat.webp';
 import ChiImage from '../assets/ChiImage.webp';
 import VisionImage from '../assets/cu.webp';
@@ -9,6 +10,7 @@ import BrotherIshmaelImage from '../assets/brother-ishmael.webp';
 
 const AboutUsPage = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
+  const [isMailingListModalOpen, setIsMailingListModalOpen] = React.useState(false);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
@@ -26,6 +28,10 @@ const AboutUsPage = () => {
     navigate('/donate');
   };
 
+  const handleJoinMailingListClick = () => {
+    setIsMailingListModalOpen(true);
+  };
+
   const handleCloseAuthModal = () => {
     setIsAuthModalOpen(false);
   };
@@ -33,6 +39,10 @@ const AboutUsPage = () => {
   const handleAuthSuccess = () => {
     setIsAuthModalOpen(false);
     // navigate('/welcome'); 
+  };
+
+  const handleCloseMailingListModal = () => {
+    setIsMailingListModalOpen(false);
   };
 
   return (
@@ -333,6 +343,12 @@ const AboutUsPage = () => {
               >
                 Make a Donation
               </button>
+              <button  
+                onClick={handleJoinMailingListClick}
+                className="px-8 py-3 bg-emerald-600 text-white font-medium rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+              >
+                Join Our Mailing List
+              </button>
             </div>
           </div>
         </div>
@@ -344,6 +360,12 @@ const AboutUsPage = () => {
         onClose={handleCloseAuthModal}
         onAuthSuccess={handleAuthSuccess}
         initialTab="register"
+      />
+
+      {/* --- Render MailingListModal --- */}
+      <MailingListModal 
+        isOpen={isMailingListModalOpen}
+        onClose={handleCloseMailingListModal}
       />
     </div>
   );

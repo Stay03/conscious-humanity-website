@@ -29,9 +29,10 @@ const CourseLearnPage = () => {
   // Add a flag to indicate explicit lesson selection
   const [explicitLessonSelection, setExplicitLessonSelection] = useState(false);
   
-  // Get lessonId from URL if present
+  // Get lessonId and quizId from URL if present
   const searchParams = new URLSearchParams(location.search);
   const lessonIdFromUrl = searchParams.get('lesson');
+  const quizIdFromUrl = searchParams.get('quiz');
 
   // Fetch course details using custom hook with detailed=true
   const { 
@@ -78,9 +79,57 @@ const CourseLearnPage = () => {
   useEffect(() => {
     if (!course) return;
     
+    // If there's a quiz ID in the URL, create a virtual lesson for the quiz
+    if (quizIdFromUrl) {
+      const quizId = parseInt(quizIdFromUrl);
+      
+      // Find the quiz and its section
+      let foundQuiz = null;
+      let foundSection = null;
+      
+      // Look for the quiz in all sections
+      for (const section of course.sections || []) {
+        const quiz = (section.quizzes || []).find(q => q.id === quizId);
+        if (quiz) {
+          foundQuiz = quiz;
+          foundSection = section;
+          break;
+        }
+      }
+      
+      // If we found the quiz, create a virtual lesson
+      if (foundQuiz) {
+        const virtualLesson = {
+          id: `quiz-lesson-${foundQuiz.id}`,
+          title: foundQuiz.title,
+          description: foundQuiz.description || `Section quiz from ${foundSection.title}`,
+          content: `<p>This is a section-level quiz: <strong>${foundQuiz.title}</strong></p><p>This quiz can be taken immediately - no lesson completion required.</p>`,
+          section_id: foundSection.id,
+          course_id: foundQuiz.course_id,
+          video_url: null,
+          complete: true, // Mark as complete so quiz is immediately accessible
+          quizzes: [foundQuiz],
+          isVirtualLesson: true
+        };
+        
+        setSelectedLesson(virtualLesson);
+        setSelectedSection(foundSection);
+        setViewMode('lesson');
+        return; // Exit the effect once we've found and set the quiz
+      }
+      
+      // If quiz not found, redirect to grid view
+      setViewMode('grid');
+      setSelectedLesson(null);
+      setSelectedSection(null);
+      navigate(`/course/${slug}/learn`, { replace: true });
+    }
     // If there's a lesson ID in the URL, switch to lesson view
-    if (lessonIdFromUrl) {
+    else if (lessonIdFromUrl) {
       const lessonId = parseInt(lessonIdFromUrl);
+      
+      // Clear any virtual lesson state when switching to real lesson
+      // This prevents contamination from previous quiz selections
       
       // Find the lesson and its section regardless of progression status
       let foundLesson = null;
@@ -100,7 +149,8 @@ const CourseLearnPage = () => {
       if (foundLesson) {
         // Check if it's either available in progression, completed, or progression is disabled
         const isCompleted = foundLesson.complete === true;
-        if (!progressionEnabled || isLessonAvailable(lessonId) || isCompleted || explicitLessonSelection) {
+        const isAvailable = availableLessons.some(l => l.id === lessonId);
+        if (!progressionEnabled || isAvailable || isCompleted || explicitLessonSelection) {
           setSelectedLesson(foundLesson);
           setSelectedSection(foundSection);
           setViewMode('lesson');
@@ -121,12 +171,13 @@ const CourseLearnPage = () => {
         navigate(`/course/${slug}/learn`, { replace: true });
       }
     } else {
-      // No lesson in URL - show grid view (but don't auto-navigate to next lesson if we explicitly chose grid view)
+      // No lesson or quiz in URL - show grid view 
+      // Clear any virtual lesson state
       if (!manualGridView && progressionEnabled && nextLesson && viewMode !== 'grid' && !explicitLessonSelection) {
         // If progression is enabled and no lesson selected, suggest the next lesson
         navigate(`/course/${slug}/learn?lesson=${nextLesson.id}`, { replace: true });
       } else {
-        // Otherwise, show grid view
+        // Otherwise, show grid view with clean state
         setViewMode('grid');
         setSelectedLesson(null);
         setSelectedSection(null);
@@ -135,7 +186,7 @@ const CourseLearnPage = () => {
     
     // Reset explicit lesson selection flag after processing
     setExplicitLessonSelection(false);
-  }, [course, lessonIdFromUrl, progressionEnabled, nextLesson, isLessonAvailable, slug, navigate, viewMode, manualGridView, explicitLessonSelection]);
+  }, [course, lessonIdFromUrl, quizIdFromUrl, progressionEnabled, nextLesson, availableLessons, slug, navigate, viewMode, manualGridView, explicitLessonSelection]);
 
   // Handle lesson selection with progression check
   const handleLessonSelect = (lesson, section) => {
@@ -151,12 +202,14 @@ const CourseLearnPage = () => {
     
     // Allow selecting lessons that are either available in progression, completed, or if progression is disabled
     const isCompleted = lesson.complete === true;
-    if (!progressionEnabled || isLessonAvailable(lesson.id) || isCompleted) {
+    const isAvailable = availableLessons.some(l => l.id === lesson.id);
+    if (!progressionEnabled || isAvailable || isCompleted) {
+      // Set the lesson (URL change will clear any virtual lesson state)
       setSelectedLesson(lesson);
       setSelectedSection(section);
       setViewMode('lesson');
       
-      // Update URL with lesson ID
+      // Update URL with lesson ID (this will clear any quiz parameters)
       navigate(`/course/${slug}/learn?lesson=${lesson.id}`, { replace: true });
       
       // Set a timeout to simulate loading and give time for resources to load
@@ -170,6 +223,44 @@ const CourseLearnPage = () => {
     }
   };
 
+  // Handle quiz selection - create virtual lesson containing the quiz
+  const handleQuizSelect = (quiz, section) => {
+    // Reset the manual grid view flag when selecting a quiz
+    setManualGridView(false);
+    
+    // Set navigating state to show loading UI
+    setIsNavigating(true);
+    
+    // Set explicit selection flag to true
+    setExplicitLessonSelection(true);
+    
+    // Create a virtual lesson that contains the section quiz
+    const virtualLesson = {
+      id: `quiz-lesson-${quiz.id}`,
+      title: quiz.title,
+      description: quiz.description || `Section quiz from ${section.title}`,
+      content: `<p>This is a section-level quiz: <strong>${quiz.title}</strong></p><p>This quiz can be taken immediately - no lesson completion required.</p>`,
+      section_id: section.id,
+      course_id: quiz.course_id,
+      video_url: null,
+      complete: true, // Mark as complete so quiz is immediately accessible
+      quizzes: [quiz], // Include the section quiz as if it belongs to this lesson
+      isVirtualLesson: true // Flag to identify this as a virtual lesson
+    };
+    
+    setSelectedLesson(virtualLesson);
+    setSelectedSection(section);
+    setViewMode('lesson');
+    
+    // Update URL with quiz ID for direct access
+    navigate(`/course/${slug}/learn?quiz=${quiz.id}`, { replace: true });
+    
+    // Set a timeout to simulate loading
+    setTimeout(() => {
+      setIsNavigating(false);
+    }, 800);
+  };
+
   // Handle returning to grid view
   const handleBackToGrid = () => {
     // Set the manual grid view flag to prevent auto-navigation
@@ -178,7 +269,7 @@ const CourseLearnPage = () => {
     setSelectedLesson(null);
     setSelectedSection(null);
     
-    // Remove lesson param from URL
+    // Remove lesson/quiz param from URL
     navigate(`/course/${slug}/learn`, { replace: true });
   };
 
@@ -293,6 +384,7 @@ const CourseLearnPage = () => {
               course={course}
               selectedLesson={selectedLesson}
               onLessonSelect={handleLessonSelect}
+              onQuizSelect={handleQuizSelect}
               onBackToGrid={handleBackToGrid}
               availableSections={availableSections}
               availableLessons={availableLessons}
@@ -314,6 +406,7 @@ const CourseLearnPage = () => {
                   <LessonGrid 
                     sections={availableSections}
                     onLessonSelect={handleLessonSelect}
+                    onQuizSelect={handleQuizSelect}
                     availableLessons={availableLessons}
                     progressionEnabled={progressionEnabled}
                     isNavigating={isNavigating}

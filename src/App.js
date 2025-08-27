@@ -38,6 +38,7 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
 const AncestralWisdomRetreatPage = lazy(() => import('./pages/AncestralWisdomRetreatPage'));
+const BlogPage = lazy(() => import('./pages/BlogPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -103,6 +104,9 @@ const AppContent = () => {
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/ancestral-wisdom-retreat" element={<AncestralWisdomRetreatPage />} />
+                <Route path="/blog" element={<BlogPage />} />
+                <Route path="/blog/category/:categorySlug" element={<BlogPage />} />
+                <Route path="/blog/:slug" element={<BlogPage />} />
                 {/* Catch-all route for 404 page */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

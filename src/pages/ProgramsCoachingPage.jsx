@@ -3,11 +3,13 @@ import { ArrowRight, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/auth/AuthModal';
+import MailingListModal from '../components/common/MailingListModal';
 import MarryMcPherson from '../assets/image6-300x400.webp';
 
 const ProgramsCoachingPage = () => {
   const [isVisible, setIsVisible] = useState({});
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isMailingListModalOpen, setIsMailingListModalOpen] = useState(false);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
@@ -44,6 +46,10 @@ const ProgramsCoachingPage = () => {
     navigate('/donate');
   };
 
+  const handleJoinMailingListClick = () => {
+    setIsMailingListModalOpen(true);
+  };
+
   const handleCloseAuthModal = () => {
     setIsAuthModalOpen(false);
   };
@@ -51,6 +57,10 @@ const ProgramsCoachingPage = () => {
   const handleAuthSuccess = () => {
     setIsAuthModalOpen(false);
     // navigate('/welcome'); 
+  };
+
+  const handleCloseMailingListModal = () => {
+    setIsMailingListModalOpen(false);
   };
 
   // Programs data
@@ -261,6 +271,12 @@ const ProgramsCoachingPage = () => {
               >
                 Make a Donation
               </button>
+              <button  
+                onClick={handleJoinMailingListClick}
+                className="px-8 py-3 bg-emerald-600 text-white font-medium rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+              >
+                Join Our Mailing List
+              </button>
             </div>
           </div>
         </div>
@@ -272,6 +288,12 @@ const ProgramsCoachingPage = () => {
         onClose={handleCloseAuthModal}
         onAuthSuccess={handleAuthSuccess}
         initialTab="register"
+      />
+
+      {/* --- Render MailingListModal --- */}
+      <MailingListModal 
+        isOpen={isMailingListModalOpen}
+        onClose={handleCloseMailingListModal}
       />
     </div>
   );
